@@ -1,5 +1,6 @@
 import { _decorator, Component, input, Input, EventTouch, Vec3 } from 'cc';
 import { PlayerAnimController } from './PlayerAnimController';
+import { WorldMotor } from './WorldMotor';
 const { ccclass, property } = _decorator;
 
 export interface IRunnerMotor { startRun(): void; }
@@ -24,6 +25,13 @@ export class PlayerTapStartJump extends Component {
 
     onLoad() {
         if (!this.anim) this.anim = this.getComponent(PlayerAnimController);
+
+        if (!this.motor) {
+            const parent = this.node.parent;
+            if (parent) {
+                this.motor = parent.getComponent(WorldMotor) || parent.addComponent(WorldMotor);
+            }
+        }
 
         const hasTouch =
             (typeof window !== 'undefined') &&
