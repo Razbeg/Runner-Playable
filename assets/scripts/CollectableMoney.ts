@@ -1,17 +1,13 @@
+import { _decorator, Component, Vec3 } from 'cc';
 import {
-    _decorator,
-    Component,
-    Vec2,
-} from 'cc';
-
-import {
-    PhysicsSystem2D,
     Contact2DType,
     Collider2D,
     CircleCollider2D,
     RigidBody2D,
     ERigidBody2DType,
 } from 'cc';
+
+import { MoneyPickupFx } from './MoneyPickupFx';
 
 const { ccclass, property } = _decorator;
 
@@ -21,6 +17,12 @@ export class CollectableMoney extends Component {
     playerColliderTag = 1;
 
     @property
+    value = 50;
+
+    @property(MoneyPickupFx)
+    pickupFx: MoneyPickupFx | null = null;
+
+    @property
     disableOnPickup = true;
 
     @property
@@ -28,9 +30,9 @@ export class CollectableMoney extends Component {
 
     private _col: Collider2D | null = null;
     private _picked = false;
+    private _tmpWorld = new Vec3();
 
     onLoad() {
-        this._ensurePhysics2D();
         this._ensureCollider();
     }
 
@@ -38,13 +40,6 @@ export class CollectableMoney extends Component {
         if (this._col) {
             this._col.off(Contact2DType.BEGIN_CONTACT, this._onBeginContact, this);
         }
-    }
-
-    private _ensurePhysics2D() {
-        const sys = PhysicsSystem2D.instance;
-        if (!sys) return;
-        if (!sys.enable) sys.enable = true;
-        sys.gravity = new Vec2(0, 0);
     }
 
     private _ensureCollider() {
@@ -71,6 +66,9 @@ export class CollectableMoney extends Component {
         if (!other || other.tag !== this.playerColliderTag) return;
 
         this._picked = true;
+
+        this.node.getWorldPosition(this._tmpWorld);
+        this.pickupFx?.onPickup(this.value, this._tmpWorld);
 
         if (this.destroyOnPickup) {
             this.node.destroy();
