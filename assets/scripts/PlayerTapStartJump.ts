@@ -7,6 +7,8 @@ export interface IRunnerMotor { startRun(): void; }
 
 @ccclass('PlayerTapStartJump')
 export class PlayerTapStartJump extends Component {
+    static readonly EVENT_STARTED = 'runner_started';
+
     @property(PlayerAnimController) anim: PlayerAnimController | null = null;
     @property(Component) motor: Component | null = null;
 
@@ -14,6 +16,7 @@ export class PlayerTapStartJump extends Component {
 
     private _started = false;
     private _isJumping = false;
+    private _inputEnabled = true;
 
     private _baseY = 0;
     private _jumpT = 0;
@@ -53,13 +56,31 @@ export class PlayerTapStartJump extends Component {
         this._started = false;
         this._isJumping = false;
         this._jumpT = 0;
+        this._inputEnabled = true;
         this.anim?.playIdle(true);
+    }
+
+    setInputEnabled(v: boolean) {
+        this._inputEnabled = v;
+    }
+
+    jumpNow(): boolean {
+        if (!this._started) return false;
+        if (this._isJumping) return false;
+        this._startJump();
+        return true;
+    }
+
+    get started() {
+        return this._started;
     }
 
     private _onTouch(_e: EventTouch) { this._handleTap(); }
     private _onMouse() { this._handleTap(); }
 
     private _handleTap() {
+        if (!this._inputEnabled) return;
+
         const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
         if (now - this._lastTapMs < 40) return;
         this._lastTapMs = now;
@@ -71,6 +92,8 @@ export class PlayerTapStartJump extends Component {
             m?.startRun();
 
             this.anim?.playRun(true);
+
+            this.node.emit(PlayerTapStartJump.EVENT_STARTED);
             return;
         }
 

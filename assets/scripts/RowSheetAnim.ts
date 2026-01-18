@@ -10,6 +10,7 @@ export class RowSheetAnim extends Component {
     @property fps = 12;
     @property loop = true;
     @property autoplay = true;
+    @property reverse = false;
 
     private _frames: SpriteFrame[] = [];
     private _idx = 0;
@@ -38,7 +39,8 @@ export class RowSheetAnim extends Component {
         for (let i = 0; i < this.frameCount; i++) {
             const sf = new SpriteFrame();
             sf.texture = this.sheet;
-            sf.rect = new Rect(i * cellW, 0, cellW, cellH);
+            const col = this.reverse ? (this.frameCount - 1 - i) : i;
+            sf.rect = new Rect(col * cellW, 0, cellW, cellH);
             sf.originalSize = new Size(cellW, cellH);
             sf.offset = new Vec2(0, 0);
             sf.rotated = false;
