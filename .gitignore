@@ -1,0 +1,53 @@
+#///////////////////////////
+# Cocos Creator 3.x Project
+# (keep: assets/, settings/, packages/, extensions/, build-templates/)
+#///////////////////////////
+
+# Generated / machine-specific
+library/
+temp/
+local/
+profiles/
+
+# Build outputs
+build/
+native/
+
+#//////////////////////////
+# Node / tooling
+#//////////////////////////
+node_modules/
+.pnpm-store/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.eslintcache
+*.tsbuildinfo
+
+#//////////////////////////
+# IDE / OS junk
+#//////////////////////////
+.vscode/
+.idea/
+*.iml
+
+.DS_Store
+Thumbs.db
+
+#//////////////////////////
+# Logs / temp files
+#//////////////////////////
+*.log
+*.tmp
+*.swp
+*.swo
+
+#//////////////////////////
+# Unity Playworks / Luna (if this repo also contains those exports)
+#//////////////////////////
+LunaTemp/
+LuneTemp/
+LunaExport/
