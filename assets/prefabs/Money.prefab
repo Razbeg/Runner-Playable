@@ -41,7 +41,7 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 277.082,
+      "x": 685.765,
       "y": -401.78,
       "z": 0
     },
@@ -54,8 +54,8 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 0.2,
-      "y": 0.2,
+      "x": 1,
+      "y": 1,
       "z": 1
     },
     "_mobility": 0,
@@ -82,8 +82,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 769,
-      "height": 439
+      "width": 146,
+      "height": 84
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -198,7 +198,7 @@
       "x": 0,
       "y": 0
     },
-    "_radius": 200,
+    "_radius": 40,
     "_id": ""
   },
   {
@@ -218,6 +218,8 @@
       "__id__": 11
     },
     "playerColliderTag": 1,
+    "value": 50,
+    "pickupFx": null,
     "disableOnPickup": true,
     "destroyOnPickup": false,
     "_id": ""
@@ -234,7 +236,6 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "21ahxeOoNKP4onqDUy26l7",
-    "targetOverrides": null
+    "fileId": "21ahxeOoNKP4onqDUy26l7"
   }
 ]
