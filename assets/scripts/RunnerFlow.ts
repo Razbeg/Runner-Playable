@@ -3,6 +3,10 @@ import { PlayerTapStartJump } from './PlayerTapStartJump';
 import { WorldMotor } from './WorldMotor';
 import { PlayerAnimController } from './PlayerAnimController';
 import { ProximityMovingObstacle } from './ProximityMovingObstacle';
+import { Health } from './Health';
+import { MoneyWallet } from './MoneyWallet';
+import { EndCardUI } from './EndCardUI';
+import { FinishLineTrigger } from './FinishLineTrigger';
 
 const { ccclass, property } = _decorator;
 
@@ -35,9 +39,23 @@ export class RunnerFlow extends Component {
     @property
     pauseMovingObstaclesOnTutorial = true;
 
+    @property({ type: Health })
+    health: Health | null = null;
+
+    @property({ type: MoneyWallet })
+    wallet: MoneyWallet | null = null;
+
+    @property({ type: EndCardUI })
+    endCard: EndCardUI | null = null;
+
+    @property({ type: FinishLineTrigger })
+    finishLine: FinishLineTrigger | null = null;
+
     private _started = false;
     private _tutorialActive = false;
     private _tutorialDone = false;
+
+    private _ended = false;
 
     private _pPos = new Vec3();
     private _oPos = new Vec3();
@@ -52,6 +70,11 @@ export class RunnerFlow extends Component {
         if (!this.worldMotor) this.worldMotor = this._findWorldMotor();
         if (!this.playerAnim) this.playerAnim = this.playerTap?.anim || this._findPlayerAnim();
 
+        if (!this.health) this.health = this._findHealth();
+        if (!this.wallet) this.wallet = this._findWallet();
+        if (!this.endCard) this.endCard = this._findEndCard();
+        if (!this.finishLine) this.finishLine = this._findFinishLine();
+
         this._hasTouch =
             (typeof window !== 'undefined') &&
             (('ontouchstart' in window) || ((navigator as any)?.maxTouchPoints > 0));
@@ -59,7 +82,12 @@ export class RunnerFlow extends Component {
         if (this.introOverlay) this.introOverlay.active = true;
         if (this.tutorialOverlay) this.tutorialOverlay.active = false;
 
+        this.endCard?.hide();
+
         this.playerTap?.node.on(PlayerTapStartJump.EVENT_STARTED, this._onStarted, this);
+
+        this.health?.events.on('dead', this._onDead, this);
+        this.finishLine?.node.on(FinishLineTrigger.EVENT_FINISHED, this._onFinish, this);
 
         if (this._hasTouch) input.on(Input.EventType.TOUCH_START, this._onTapAny, this);
         else input.on(Input.EventType.MOUSE_DOWN, this._onTapAny, this);
@@ -67,6 +95,10 @@ export class RunnerFlow extends Component {
 
     onDestroy() {
         this.playerTap?.node.off(PlayerTapStartJump.EVENT_STARTED, this._onStarted, this);
+
+        this.health?.events.off('dead', this._onDead, this);
+        this.finishLine?.node.off(FinishLineTrigger.EVENT_FINISHED, this._onFinish, this);
+
         input.off(Input.EventType.TOUCH_START, this._onTapAny, this);
         input.off(Input.EventType.MOUSE_DOWN, this._onTapAny, this);
     }
@@ -85,6 +117,7 @@ export class RunnerFlow extends Component {
     }
 
     private _onTapAny() {
+        if (this._ended) return;
         if (!this._tutorialActive) return;
 
         const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -95,6 +128,7 @@ export class RunnerFlow extends Component {
     }
 
     update(_dt: number) {
+        if (this._ended) return;
         if (!this._started || this._tutorialDone || this._tutorialActive) return;
 
         const pNode = this.playerTap?.node;
@@ -111,6 +145,7 @@ export class RunnerFlow extends Component {
     }
 
     private _openTutorial() {
+        if (this._ended) return;
         this._tutorialActive = true;
 
         this.worldMotor?.stopRun();
@@ -126,6 +161,7 @@ export class RunnerFlow extends Component {
     }
 
     private _closeTutorial(jumpOnClose: boolean) {
+        if (this._ended) return;
         this._tutorialActive = false;
         this._tutorialDone = true;
 
@@ -167,6 +203,40 @@ export class RunnerFlow extends Component {
         this._pausedMoving.length = 0;
     }
 
+    private _onFinish() {
+        this._endGame(true);
+    }
+
+    private _onDead() {
+        this._endGame(false);
+    }
+
+    private _endGame(won: boolean) {
+        if (this._ended) return;
+        this._ended = true;
+
+        if (this.introOverlay) this.introOverlay.active = false;
+        if (this.tutorialOverlay) this.tutorialOverlay.active = false;
+
+        this.worldMotor?.stopRun();
+        if (this.pauseMovingObstaclesOnTutorial) this._pauseMovingObstacles(true);
+
+        this.playerTap?.setInputEnabled(false);
+        if (this.playerTap) this.playerTap.enabled = false;
+
+        this.playerAnim?.playIdle(true);
+
+        const a = this.audioSource;
+        try {
+            if (a && a.playing) a.stop();
+        } catch (e) {
+        }
+
+        const money = this.wallet?.balance ?? 0;
+        if (won) this.endCard?.showWin(money);
+        else this.endCard?.showLose(money);
+    }
+
     private _findWorldMotor(): WorldMotor | null {
         const canvas = this.node.scene?.getChildByName('Canvas');
         const designRoot = canvas?.getChildByName('MaskRoot')?.getChildByName('DesignRoot');
@@ -183,5 +253,30 @@ export class RunnerFlow extends Component {
         const canvas = this.node.scene?.getChildByName('Canvas');
         const player = canvas?.getChildByName('MaskRoot')?.getChildByName('DesignRoot')?.getChildByName('Player');
         return player?.getComponent(PlayerAnimController) || null;
+    }
+
+    private _findHealth(): Health | null {
+        const canvas = this.node.scene?.getChildByName('Canvas');
+        const h = canvas?.getChildByName('MaskRoot')?.getChildByName('System')?.getChildByName('Health');
+        return h?.getComponent(Health) || null;
+    }
+
+    private _findWallet(): MoneyWallet | null {
+        const canvas = this.node.scene?.getChildByName('Canvas');
+        const m = canvas?.getChildByName('MaskRoot')?.getChildByName('UI')?.getChildByName('Money');
+        return m?.getComponent(MoneyWallet) || null;
+    }
+
+    private _findEndCard(): EndCardUI | null {
+        const canvas = this.node.scene?.getChildByName('Canvas');
+        const e = canvas?.getChildByName('MaskRoot')?.getChildByName('UI')?.getChildByName('EndCard');
+        return e?.getComponent(EndCardUI) || null;
+    }
+
+    private _findFinishLine(): FinishLineTrigger | null {
+        const canvas = this.node.scene?.getChildByName('Canvas');
+        const designRoot = canvas?.getChildByName('MaskRoot')?.getChildByName('DesignRoot');
+        const finish = designRoot?.getChildByName('WorldRoot')?.getChildByName('SpawnRoot')?.getChildByName('FinishLine');
+        return finish?.getComponent(FinishLineTrigger) || null;
     }
 }
